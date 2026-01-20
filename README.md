@@ -8,7 +8,10 @@ A professional, enterprise-grade banking analytics platform built with Angular 2
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-![Banklytics Dashboard](https://via.placeholder.com/1200x600/0052CC/FFFFFF?text=Banklytics+Dashboard)
+## 📸 Screenshots
+
+### Login Screen
+![Banklytics Login Screen](https://github.com/carthworks/banklytics/blob/main/loginscreen.png)
 
 ## ✨ Features
 
