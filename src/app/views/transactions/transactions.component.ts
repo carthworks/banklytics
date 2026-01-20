@@ -44,7 +44,7 @@ export class TransactionsComponent {
         }
 
         if (this.selectedType() !== 'all') {
-            filters.types = [this.selectedType()];
+            filters.types = [this.selectedType() as 'debit' | 'credit'];
         }
 
         if (this.dateRange().start && this.dateRange().end) {

@@ -1,0 +1,6 @@
+Date,Description,Amount,Type,Category,Merchant,Status,Notes
+2026-01-15,Salary - January 2026,85000.00,credit,Salary,Company Inc.,completed,
+2026-01-18,Grocery Shopping,3500.00,debit,Groceries,BigBasket,completed,
+2026-01-19,Dinner at Restaurant,1200.00,debit,Dining Out,The Spice Route,completed,
+2026-01-20,Uber Rides,450.00,debit,Transportation,Uber,completed,
+2026-01-20,Netflix Subscription,649.00,debit,Subscriptions,Netflix,completed,

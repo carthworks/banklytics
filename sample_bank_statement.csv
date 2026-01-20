@@ -1,0 +1,9 @@
+Date,Description,Amount,Type,Category,Merchant
+2026-01-15,Salary - January 2026,85000,credit,Salary,Company Inc.
+2026-01-16,Grocery Shopping,3500,debit,Groceries,BigBasket
+2026-01-17,Electricity Bill,1200,debit,Utilities,BESCOM
+2026-01-18,Dinner at Restaurant,1800,debit,Dining,The Spice Route
+2026-01-19,Uber Rides,450,debit,Transportation,Uber
+2026-01-20,Netflix Subscription,649,debit,Subscriptions,Netflix
+2026-01-20,Freelance Payment,15000,credit,Freelance,Client XYZ
+2026-01-21,Medical Checkup,2500,debit,Healthcare,Apollo Hospital

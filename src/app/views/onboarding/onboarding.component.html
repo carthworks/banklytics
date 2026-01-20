@@ -1,37 +1,223 @@
-<div class="app">
-  <app-onboarding-sidebar></app-onboarding-sidebar>
+<div class="onboarding-container">
+  <!-- Progress Header -->
+  <div class="progress-header">
+    <div class="progress-bar-container">
+      <div class="progress-bar" [style.width.%]="getProgress()"></div>
+    </div>
+    <div class="step-indicators">
+      <div *ngFor="let step of [1, 2, 3, 4]" class="step-indicator" [class.active]="currentStep() === step"
+        [class.completed]="currentStep() > step" (click)="goToStep(step)">
+        <div class="step-circle">
+          <svg *ngIf="currentStep() > step" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span *ngIf="currentStep() <= step">{{ step }}</span>
+        </div>
+        <div class="step-label">
+          <span *ngIf="step === 1">Goals</span>
+          <span *ngIf="step === 2">Frequency</span>
+          <span *ngIf="step === 3">Bank Account</span>
+          <span *ngIf="step === 4">Upload Statement</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <main class="content">
-    <div class="content-bg">
-      <div class="content-wrapper">
-        <div class="step-title">{{ currentStepData.title }}</div>
+  <!-- Content Area -->
+  <div class="content-area">
+    <!-- Step 1: Financial Goals -->
+    <div class="step-content" *ngIf="currentStep() === 1">
+      <div class="step-header">
+        <h1>What are your financial goals?</h1>
+        <p>Select all that apply to personalize your experience</p>
+      </div>
 
-        <div class="options-container" *ngIf="currentStepData.type === 'options' || !currentStepData.type">
-          <app-onboarding-option *ngFor="let option of currentStepData.options" [option]="option"
-            [selected]="isOptionSelected(option.id)"
-            (optionSelected)="onOptionSelected($event)"></app-onboarding-option>
+      <div class="goals-grid">
+        <div *ngFor="let option of steps[0].options" class="goal-card" [class.selected]="isGoalSelected(option.id)"
+          (click)="toggleGoal(option.id)">
+          <div class="goal-icon">{{ option.icon }}</div>
+          <div class="goal-content">
+            <h3>{{ option.label }}</h3>
+            <p>{{ option.description }}</p>
+          </div>
+          <div class="goal-check">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Transaction Frequency -->
+    <div class="step-content" *ngIf="currentStep() === 2">
+      <div class="step-header">
+        <h1>How often do you make transactions?</h1>
+        <p>This helps us optimize your dashboard</p>
+      </div>
+
+      <div class="frequency-grid">
+        <div *ngFor="let option of steps[1].options" class="frequency-card"
+          [class.selected]="formData().frequency === option.id" (click)="selectFrequency(option.id)">
+          <div class="frequency-icon">{{ option.icon }}</div>
+          <h3>{{ option.label }}</h3>
+          <p>{{ option.description }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Bank Account -->
+    <div class="step-content" *ngIf="currentStep() === 3">
+      <div class="step-header">
+        <h1>Add your bank account</h1>
+        <p>Connect your primary bank account to get started</p>
+      </div>
+
+      <div class="bank-form">
+        <div class="form-group">
+          <label>Select Your Bank</label>
+          <select [(ngModel)]="bankId" (ngModelChange)="selectBank($event)" class="form-select">
+            <option value="">Choose a bank...</option>
+            <option *ngFor="let bank of banks" [value]="bank.id">{{ bank.name }}</option>
+          </select>
         </div>
 
-        <div class="bank-account-container" *ngIf="isBankAccountStep()">
-          <app-bank-account-form [banks]="currentStepData.banks || []" [existingAccounts]="bankAccounts"
-            (accountAdded)="onBankAccountAdded($event)"
-            (accountRemoved)="onBankAccountRemoved($event)"></app-bank-account-form>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Account Name</label>
+            <input type="text" [(ngModel)]="accountName" (ngModelChange)="updateBankAccount()"
+              placeholder="e.g., John Doe" class="form-input" />
+          </div>
+
+          <div class="form-group">
+            <label>Account Number</label>
+            <input type="text" [(ngModel)]="accountNumber" (ngModelChange)="updateBankAccount()"
+              placeholder="e.g., 1234567890" class="form-input" />
+          </div>
         </div>
 
-        <div class="info" *ngIf="currentStepData.info">
-          {{ currentStepData.info }}
+        <div class="form-group">
+          <label>Account Type</label>
+          <div class="account-type-grid">
+            <div class="account-type-card" [class.selected]="accountType() === 'savings'"
+              (click)="accountType.set('savings'); updateBankAccount()">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+              <span>Savings</span>
+            </div>
+            <div class="account-type-card" [class.selected]="accountType() === 'checking'"
+              (click)="accountType.set('checking'); updateBankAccount()">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                <line x1="1" y1="10" x2="23" y2="10"></line>
+              </svg>
+              <span>Checking</span>
+            </div>
+            <div class="account-type-card" [class.selected]="accountType() === 'credit'"
+              (click)="accountType.set('credit'); updateBankAccount()">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                <line x1="1" y1="10" x2="23" y2="10"></line>
+              </svg>
+              <span>Credit</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Upload Statement -->
+    <div class="step-content" *ngIf="currentStep() === 4">
+      <div class="step-header">
+        <h1>Upload your bank statement</h1>
+        <p>We'll analyze your transactions to provide insights</p>
+      </div>
+
+      <div class="upload-area">
+        <div class="upload-card" *ngIf="!formData().statementFile">
+          <div class="upload-icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <h3>Drop your file here or click to browse</h3>
+          <p>Supports PDF, CSV, and Excel files (max 10MB)</p>
+          <input type="file" accept=".pdf,.csv,.xls,.xlsx" (change)="onFileSelected($event)" class="file-input"
+            id="file-upload" />
+          <label for="file-upload" class="upload-button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            Choose File
+          </label>
         </div>
 
-        <div class="actions">
-          <button class="btn btn-secondary" (click)="onBack()">
-            {{ onboardingData.currentStep === 1 ? 'Cancel' : 'Back' }}
+        <div class="upload-progress" *ngIf="isUploading()">
+          <div class="progress-circle">
+            <svg width="80" height="80">
+              <circle cx="40" cy="40" r="35" fill="none" stroke="#E6F0FF" stroke-width="6"></circle>
+              <circle cx="40" cy="40" r="35" fill="none" stroke="#0052CC" stroke-width="6" [attr.stroke-dasharray]="220"
+                [attr.stroke-dashoffset]="220 - (220 * uploadProgress()) / 100" transform="rotate(-90 40 40)"></circle>
+            </svg>
+            <div class="progress-text">{{ uploadProgress() }}%</div>
+          </div>
+          <p>Uploading {{ uploadedFileName() }}...</p>
+        </div>
+
+        <div class="upload-success" *ngIf="formData().statementFile && !isUploading()">
+          <div class="success-icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <h3>{{ uploadedFileName() }}</h3>
+          <p>File uploaded successfully</p>
+          <button class="remove-button" (click)="removeFile()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            Remove File
           </button>
-          <button class="btn btn-primary" (click)="onContinue()"
-            [disabled]="!onboardingService.canProceed(onboardingData.currentStep)">
-            {{ onboardingData.currentStep === onboardingData.totalSteps ? 'Finish' : 'Continue' }}
+        </div>
+
+        <div class="sample-download">
+          <p>Don't have a statement? Download our sample to see how it works</p>
+          <button class="sample-button" (click)="downloadSample()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download Sample Statement
           </button>
         </div>
       </div>
     </div>
-  </main>
+  </div>
+
+  <!-- Navigation Footer -->
+  <div class="navigation-footer">
+    <button class="btn btn-secondary" (click)="previousStep()" [disabled]="currentStep() === 1">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+      Previous
+    </button>
+
+    <button class="btn btn-primary" (click)="nextStep()" [disabled]="!canProceed()">
+      {{ currentStep() === totalSteps ? 'Complete' : 'Next' }}
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
+  </div>
 </div>
