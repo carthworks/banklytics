@@ -29,6 +29,12 @@ export const routes: Routes = [
     canActivate: [onboardingCompletedGuard],
   },
   {
+    path: 'transactions',
+    loadComponent: () => import('./views/transactions/transactions.component').then(m => m.TransactionsComponent),
+    data: { title: 'Transactions' },
+    canActivate: [onboardingCompletedGuard],
+  },
+  {
     path: 'auth',
     component: AuthComponent,
   },

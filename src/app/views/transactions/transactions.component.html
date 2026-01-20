@@ -1,0 +1,208 @@
+<div class="transactions-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div>
+                <h1 class="page-title">Transactions</h1>
+                <p class="page-subtitle">Manage and analyze your financial transactions</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" (click)="toggleFilters()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                    </svg>
+                    Filters
+                </button>
+                <div class="export-dropdown">
+                    <button class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Export
+                    </button>
+                    <div class="dropdown-menu">
+                        <button (click)="exportToCSV()">Export to CSV</button>
+                        <button (click)="exportToExcel()">Export to Excel</button>
+                        <button (click)="exportToJSON()">Export to JSON</button>
+                        <button (click)="exportSummary()">Summary Report</button>
+                        <button (click)="print()">Print</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card income">
+            <div class="stat-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <polyline points="17 6 12 1 7 6"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total Income</div>
+                <div class="stat-value">{{ formatCurrency(totalIncome()) }}</div>
+            </div>
+        </div>
+
+        <div class="stat-card expense">
+            <div class="stat-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <polyline points="7 18 12 23 17 18"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total Expenses</div>
+                <div class="stat-value">{{ formatCurrency(totalExpenses()) }}</div>
+            </div>
+        </div>
+
+        <div class="stat-card balance" [class.positive]="netBalance() >= 0" [class.negative]="netBalance() < 0">
+            <div class="stat-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <line x1="17" y1="5" x2="9" y2="19"></line>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Net Balance</div>
+                <div class="stat-value">{{ formatCurrency(netBalance()) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Panel -->
+    <div class="filters-panel" *ngIf="showFilters()">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Search</label>
+                <input type="text" placeholder="Search transactions..." [(ngModel)]="searchQuery"
+                    (ngModelChange)="searchQuery.set($event)" />
+            </div>
+
+            <div class="filter-group">
+                <label>Category</label>
+                <select [(ngModel)]="selectedCategory" (ngModelChange)="selectedCategory.set($event)">
+                    <option value="all">All Categories</option>
+                    <option *ngFor="let cat of categories()" [value]="cat.id">
+                        {{ cat.icon }} {{ cat.name }}
+                    </option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Type</label>
+                <select [(ngModel)]="selectedType" (ngModelChange)="selectedType.set($event)">
+                    <option value="all">All Types</option>
+                    <option value="credit">Income</option>
+                    <option value="debit">Expense</option>
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button class="btn btn-secondary btn-sm" (click)="clearFilters()">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="bulk-actions" *ngIf="selectedTransactions().size > 0">
+        <div class="bulk-info">
+            <span>{{ selectedTransactions().size }} selected</span>
+            <button class="link-button" (click)="deselectAll()">Deselect all</button>
+        </div>
+        <div class="bulk-buttons">
+            <button class="btn btn-danger btn-sm" (click)="deleteSelected()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Delete Selected
+            </button>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="transactions-table">
+        <div class="table-header">
+            <div class="header-cell checkbox-cell">
+                <input type="checkbox"
+                    [checked]="selectedTransactions().size === sortedTransactions().length && sortedTransactions().length > 0"
+                    (change)="selectedTransactions().size > 0 ? deselectAll() : selectAll()" />
+            </div>
+            <div class="header-cell date-cell" (click)="toggleSort('date')">
+                Date
+                <svg *ngIf="sortBy() === 'date'" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <polyline [attr.points]="sortOrder() === 'asc' ? '18 15 12 9 6 15' : '6 9 12 15 18 9'"></polyline>
+                </svg>
+            </div>
+            <div class="header-cell description-cell">Description</div>
+            <div class="header-cell category-cell">Category</div>
+            <div class="header-cell amount-cell" (click)="toggleSort('amount')">
+                Amount
+                <svg *ngIf="sortBy() === 'amount'" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <polyline [attr.points]="sortOrder() === 'asc' ? '18 15 12 9 6 15' : '6 9 12 15 18 9'"></polyline>
+                </svg>
+            </div>
+            <div class="header-cell actions-cell">Actions</div>
+        </div>
+
+        <div class="table-body">
+            <div *ngFor="let transaction of sortedTransactions()" class="table-row"
+                [class.selected]="selectedTransactions().has(transaction.id)">
+                <div class="cell checkbox-cell">
+                    <input type="checkbox" [checked]="selectedTransactions().has(transaction.id)"
+                        (change)="toggleTransactionSelection(transaction.id)" />
+                </div>
+                <div class="cell date-cell">
+                    {{ formatDate(transaction.date) }}
+                </div>
+                <div class="cell description-cell">
+                    <div class="description-content">
+                        <div class="description-main">{{ transaction.description }}</div>
+                        <div class="description-sub" *ngIf="transaction.merchant">{{ transaction.merchant }}</div>
+                    </div>
+                </div>
+                <div class="cell category-cell">
+                    <span class="category-badge" [style.background-color]="getCategoryColor(transaction.category.id)">
+                        {{ getCategoryIcon(transaction.category.id) }} {{ transaction.category.name }}
+                    </span>
+                </div>
+                <div class="cell amount-cell">
+                    <span class="amount" [class.credit]="transaction.type === 'credit'"
+                        [class.debit]="transaction.type === 'debit'">
+                        {{ transaction.type === 'credit' ? '+' : '-' }}{{ formatCurrency(transaction.amount) }}
+                    </span>
+                </div>
+                <div class="cell actions-cell">
+                    <button class="icon-button" (click)="deleteTransaction(transaction.id)" title="Delete">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div *ngIf="sortedTransactions().length === 0" class="empty-state">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <h3>No transactions found</h3>
+                <p>Try adjusting your filters or add some transactions</p>
+            </div>
+        </div>
+    </div>
+</div>
