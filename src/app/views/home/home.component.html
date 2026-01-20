@@ -1,0 +1,190 @@
+<div class="home-app">
+  <!-- Sidebar -->
+  <app-home-sidebar
+    [selectedAccountId]="selectedAccountId"
+    (accountSelected)="onAccountSelect($event)"
+    (addAccountRequested)="onAddAccountRequested()"
+  ></app-home-sidebar>
+
+  <!-- Content -->
+  <main class="content">
+    <div class="content-wrapper">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-subtitle" *ngIf="selectedAccount">
+            {{ selectedAccount.bankName }} - {{ selectedAccount.accountName }}
+          </p>
+          <p class="page-subtitle" *ngIf="!selectedAccount">
+            Select an account to view data
+          </p>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <app-tabs
+        [tabs]="tabs"
+        [activeTabId]="activeTab"
+        (tabChanged)="onTabChange($event)"
+      ></app-tabs>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- Overview Tab -->
+        <div *ngIf="activeTab === 'overview'" class="tab-panel">
+          <!-- Upload Section -->
+          <section class="upload-section" [class.expanded]="isUploadExpanded">
+            <div class="upload-header" (click)="toggleUpload()">
+              <div class="title-with-icon">
+                <svg 
+                  class="upload-icon"
+                  width="20" 
+                  height="20" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <h2 class="section-title">Upload Statement</h2>
+              </div>
+              <svg 
+                class="expand-icon" 
+                [class.expanded]="isUploadExpanded"
+                width="20" 
+                height="20" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                stroke-width="2"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="upload-content" *ngIf="isUploadExpanded">
+              <app-file-upload
+                accept=".csv,.xlsx,.xls"
+                (fileSelected)="onFileUploaded($event)"
+                (error)="onUploadError($event)"
+              ></app-file-upload>
+            </div>
+          </section>
+
+          <!-- Dashboard Cards -->
+          <section class="dashboard-section" *ngIf="selectedAccount || bankAccounts.length > 0">
+            <h2 class="section-title">Financial Summary</h2>
+            <div class="cards-grid">
+              <app-dashboard-card
+                title="Total Balance"
+                [value]="(totalBalance | currency:'BRL':'symbol':'1.2-2') || 'R$ 0,00'"
+                subtitle="Available"
+                variant="primary"
+              ></app-dashboard-card>
+
+              <app-dashboard-card
+                title="Monthly Income"
+                [value]="(monthlyIncome | currency:'BRL':'symbol':'1.2-2') || 'R$ 0,00'"
+                subtitle="Last 30 days"
+                variant="success"
+              ></app-dashboard-card>
+
+              <app-dashboard-card
+                title="Monthly Expenses"
+                [value]="(monthlyExpenses | currency:'BRL':'symbol':'1.2-2') || 'R$ 0,00'"
+                subtitle="Last 30 days"
+                variant="warning"
+              ></app-dashboard-card>
+
+              <app-dashboard-card
+                title="Transactions"
+                [value]="transactionsCount"
+                subtitle="This month"
+                variant="default"
+              ></app-dashboard-card>
+            </div>
+          </section>
+
+          <!-- Charts Section -->
+          <section class="charts-section" *ngIf="selectedAccount">
+            <div class="charts-grid">
+              <div class="chart-card">
+                <app-line-chart
+                  title="Income"
+                  [data]="incomeData"
+                  [labels]="dailyLabels"
+                  color="#40800b"
+                ></app-line-chart>
+              </div>
+              <div class="chart-card">
+                <app-line-chart
+                  title="Expenses"
+                  [data]="expenseData"
+                  [labels]="dailyLabels"
+                  color="#ef4444"
+                ></app-line-chart>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Transactions Tab -->
+        <div *ngIf="activeTab === 'transactions'" class="tab-panel">
+          <section class="transactions-section">
+            <h2 class="section-title">Transactions</h2>
+            <div class="empty-state" *ngIf="!selectedAccount">
+              <p>Select an account to view transactions</p>
+            </div>
+            <div class="transactions-list" *ngIf="selectedAccount">
+              <p class="info-text">Transaction list will be displayed here</p>
+            </div>
+          </section>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div *ngIf="activeTab === 'analytics'" class="tab-panel">
+          <section class="analytics-section">
+            <h2 class="section-title">Analytics</h2>
+            <div class="empty-state" *ngIf="!selectedAccount">
+              <p>Select an account to view analytics</p>
+            </div>
+            <div class="analytics-content" *ngIf="selectedAccount">
+              <div class="chart-card full-width">
+                <app-bar-chart
+                  title="Income vs Expenses - Last 7 Weeks"
+                  [data]="combinedData"
+                  [labels]="monthlyLabels"
+                  color="#40800b"
+                ></app-bar-chart>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="bankAccounts.length === 0">
+        <p>Add an account in onboarding to get started</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal para adicionar conta -->
+  <app-modal
+    *ngIf="showAddAccountModal"
+    title="Add Bank Account"
+    (close)="onCloseModal()"
+  >
+    <app-bank-account-form
+      [banks]="availableBanks"
+      [existingAccounts]="bankAccounts"
+      [showExistingAccounts]="false"
+      (accountAdded)="onAccountAdded($event)"
+      (accountRemoved)="onAccountRemoved($event)"
+    ></app-bank-account-form>
+  </app-modal>
+</div>
