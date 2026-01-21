@@ -256,4 +256,99 @@ export class TransactionService {
         this.categories.update(cats => [...cats, newCategory]);
         return newCategory;
     }
+
+    // Import/Export helpers
+    exists(data: { date: Date; amount: number; description: string; type: string }): boolean {
+        return this.transactions().some(t => {
+            const sameDate = t.date.getFullYear() === data.date.getFullYear() &&
+                t.date.getMonth() === data.date.getMonth() &&
+                t.date.getDate() === data.date.getDate();
+            return sameDate &&
+                Math.abs(t.amount - data.amount) < 0.01 &&
+                t.description.trim().toLowerCase() === data.description.trim().toLowerCase() &&
+                t.type === data.type;
+        });
+    }
+
+    processCSV(csvText: string): { imported: number; skipped: number; errors: number } {
+        const lines = csvText.split('\n').filter(line => line.trim());
+        if (lines.length < 2) return { imported: 0, skipped: 0, errors: 0 };
+
+        let imported = 0;
+        let skipped = 0;
+        let errors = 0;
+
+        // Skip header
+        const dataLines = lines.slice(1);
+
+        for (const line of dataLines) {
+            const columns = line.split(',').map(col => col.trim());
+            if (columns.length < 3) { // Allow minimal rows
+                errors++;
+                continue;
+            }
+
+            try {
+                // Expected format matches Onboarding: Date, Description, Amount, Type, ...
+                // But handle flexibility
+                const [dateStr, description, amountStr, typeRaw, categoryName, merchant] = columns;
+
+                // Safe local date parsing
+                let date: Date;
+                if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    const [y, m, d] = dateStr.split('-').map(Number);
+                    date = new Date(y, m - 1, d);
+                } else {
+                    date = new Date(dateStr);
+                }
+
+                if (isNaN(date.getTime())) {
+                    errors++;
+                    continue;
+                }
+
+                const amount = Math.abs(parseFloat(amountStr.replace(/[^\d.-]/g, '')));
+                if (isNaN(amount)) {
+                    errors++;
+                    continue;
+                }
+
+                const type = (typeRaw || '').toLowerCase() === 'credit' ? 'credit' : 'debit';
+
+                // Check duplicate
+                if (this.exists({ date, amount, description: description || 'Transaction', type })) {
+                    skipped++;
+                    continue;
+                }
+
+                // Find or default category
+                let category = this.categories()[0]; // Default
+                if (categoryName) {
+                    const found = this.categories().find(c =>
+                        c.name.toLowerCase() === categoryName.toLowerCase() ||
+                        c.id === categoryName.toLowerCase()
+                    );
+                    if (found) category = found;
+                }
+
+                this.add({
+                    date,
+                    description: description || 'Transaction',
+                    amount,
+                    type,
+                    category,
+                    merchant: merchant || undefined,
+                    status: 'completed',
+                    accountId: 'imported_account', // Placeholder or pass in
+                });
+                imported++;
+
+            } catch (e) {
+                console.error('Error parsing line:', line, e);
+                errors++;
+            }
+        }
+
+        return { imported, skipped, errors };
+    }
 }

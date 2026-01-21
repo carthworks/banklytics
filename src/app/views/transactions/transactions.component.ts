@@ -209,4 +209,46 @@ export class TransactionsComponent {
         const category = this.categories().find(c => c.id === categoryId);
         return category?.color || '#97A0AF';
     }
+
+    onFileSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        if (input.files && input.files.length > 0) {
+            const file = input.files[0];
+
+            if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+                this.uiService.toast.error('Invalid File', 'Please upload a CSV file');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                this.uiService.toast.error('File Too Large', 'Maximum file size is 10MB');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target?.result as string;
+                const result = this.transactionService.processCSV(text);
+
+                if (result.imported > 0) {
+                    this.uiService.toast.success('Import Successful', `Imported ${result.imported} transactions.`);
+                }
+
+                if (result.skipped > 0) {
+                    this.uiService.toast.info('Duplicates Skipped', `Skipped ${result.skipped} duplicate transactions.`);
+                }
+
+                if (result.errors > 0) {
+                    this.uiService.toast.warn('Import Issues', `${result.errors} lines could not be parsed.`);
+                }
+
+                if (result.imported === 0 && result.skipped === 0) {
+                    this.uiService.toast.error('Import Failed', 'No valid transactions found.');
+                }
+
+                input.value = ''; // Reset input
+            };
+            reader.readAsText(file);
+        }
+    }
 }
